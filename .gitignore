@@ -4,3 +4,4 @@
 *.xcuserdata/
 .tmp-workspace/
 dist/
+.codex/

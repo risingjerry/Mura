@@ -1,9 +1,0 @@
-[commands]
-build = "swift build"
-test = "swift test"
-run_cli = "swift run dmwctl status --json"
-run_app = "swift run DesktopMemoryWallApp"
-package = "script/package_app.sh"
-
-[workspace]
-default = "~/Library/Application Support/DesktopMemoryWall"

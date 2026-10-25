@@ -17,4 +17,4 @@ Every visible user action has a primitive `dmwctl` equivalent over the same work
 | List displays | `dmwctl displays list --json` | Reads display profiles | None |
 | Diagnostics | `dmwctl diagnostics --json` | Reads board/display/render/audit/editor/font summary | None |
 
-Commands are intentionally primitive. Higher-level choices, such as what reminders belong on the wall, should live in prompts or `docs/agent/context.md`, not in app code.
+Commands are intentionally primitive. Higher-level choices, such as what reminders belong on the wall, should live in prompts or `AGENTS.md`, not in app code.

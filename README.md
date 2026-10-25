@@ -10,7 +10,7 @@
 
 **Mura is a small macOS menu bar app: write and doodle on a blank canvas, press one button, and it becomes your desktop wallpaper, so the things you must remember are the first thing you see.**
 
-![Mura editor screenshot](docs/images/mura-editor.png)
+![Demo: write a note on the Mura canvas, click Save to desktop and it becomes the macOS wallpaper; an agent then adds a reminder with dmwctl and applies it with --confirm](docs/demo.gif)
 
 ## What is Mura?
 
@@ -24,6 +24,8 @@ Good for what you should see every time you open your laptop:
 - different notes on different screens
 
 Mura is not a task manager. It does one thing: **it makes your desktop itself a reminder canvas.**
+
+![Mura editor screenshot](docs/images/mura-editor.png)
 
 ![Mura color palette screenshot](docs/images/mura-colors.png)
 

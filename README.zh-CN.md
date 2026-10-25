@@ -14,7 +14,7 @@
   <a href="README.md">English</a> · <strong>中文</strong> · <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
 </p>
 
-![Mura editor screenshot](docs/images/mura-editor.png)
+![演示：在 Mura 画布上写下笔记，点「保存到桌面」就变成 macOS 壁纸；Agent 也能用 dmwctl 添加提醒并用 --confirm 应用](docs/demo.gif)
 
 ## Mura 是什么？
 
@@ -40,6 +40,8 @@ Mura 不想做复杂的任务管理软件。它只做一件事：**让你的桌�
 ### 随手涂鸦
 
 用画笔画线、圈重点、加箭头，也可以用颜色区分不同提醒。
+
+![Mura editor screenshot](docs/images/mura-editor.png)
 
 ![Mura color palette screenshot](docs/images/mura-colors.png)
 

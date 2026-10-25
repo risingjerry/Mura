@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo="${MURA_REPO:-JNHFlow21/Mura}"
+repo="${MURA_REPO:-risingjerry/Mura}"
 app_name="Mura"
 asset_name="Mura-v1.dmg"
 checksum_name="$asset_name.sha256"

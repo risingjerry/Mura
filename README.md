@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/JNHFlow21/Mura/releases/latest"><strong>下载最新版</strong></a>
+  <a href="https://github.com/risingjerry/Mura/releases/latest"><strong>下载最新版</strong></a>
 </p>
 
 <p align="center">
@@ -54,14 +54,14 @@ Mura 不想做复杂的任务管理软件。它只做一件事：**让你的桌�
 🚀一键安装使用：打开「终端」，复制下面这一行命令回车即可。它会自动下载 Release 版本、安装到 `/Applications`、清除未签名版本的 quarantine 标记，并打开 Mura。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JNHFlow21/Mura/main/script/install_release.sh | bash
+curl -fsSL https://raw.githubusercontent.com/risingjerry/Mura/main/script/install_release.sh | bash
 ```
 
 如果你的 Mac 要求权限，终端会提示你输入登录密码。
 
 也可以手动安装：
 
-1. 打开 [Releases](https://github.com/JNHFlow21/Mura/releases/latest)。
+1. 打开 [Releases](https://github.com/risingjerry/Mura/releases/latest)。
 2. 下载 `Mura-v1.dmg`。
 3. 打开 DMG，把 `Mura.app` 拖进 `/Applications`。
 4. 启动 Mura。
@@ -99,16 +99,16 @@ Mura 是本地优先的桌面工具。画布内容保存在你的 Mac 本地，�
 
 ## 下载
 
-- [下载 Mura-v1.dmg](https://github.com/JNHFlow21/Mura/releases/latest/download/Mura-v1.dmg)
-- [查看所有 Release](https://github.com/JNHFlow21/Mura/releases)
+- [下载 Mura-v1.dmg](https://github.com/risingjerry/Mura/releases/latest/download/Mura-v1.dmg)
+- [查看所有 Release](https://github.com/risingjerry/Mura/releases)
 
 ## Star History
 
-<a href="https://www.star-history.com/#JNHFlow21/Mura&Date">
+<a href="https://www.star-history.com/#risingjerry/Mura&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=JNHFlow21/Mura&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=JNHFlow21/Mura&type=Date" />
-    <img alt="Mura Star History" src="https://api.star-history.com/svg?repos=JNHFlow21/Mura&type=Date" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=risingjerry/Mura&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=risingjerry/Mura&type=Date" />
+    <img alt="Mura Star History" src="https://api.star-history.com/svg?repos=risingjerry/Mura&type=Date" />
   </picture>
 </a>
 

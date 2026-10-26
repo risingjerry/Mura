@@ -24,7 +24,7 @@ swift test                                         # unit tests; they use a fake
 swift build -c release --product mura
 MURA_HOME=/tmp/mura-dev .build/release/mura render --date tomorrow --size 1920x1200 --out /tmp/mura-dev/out
 script/install.sh                                  # real install for the current user
-python3 docs/demo/build.py                         # rebuild docs/demo.gif (needs Chrome + ffmpeg + fonts from `mura setup`)
+python3 docs/demo/build.py [--lang zh]             # rebuild docs/demo.gif / docs/demo-zh.gif (needs Chrome + ffmpeg + fonts from `mura setup`)
 ```
 
 Releases: tag `vX.Y.Z` and attach `mura-macos-universal.tar.gz` (a universal `mura` from `swift build -c release --arch arm64 --arch x86_64`); the one-line installer downloads that asset.

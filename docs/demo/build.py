@@ -2,15 +2,25 @@
 """Rebuilds docs/demo.gif: an agent plans tomorrow, the desktop switches at midnight, a task gets ticked.
 
 Needs a built `mura` (with `mura setup` fonts), Google Chrome and ffmpeg. All content is made up.
-    python3 docs/demo/build.py [--mura .build/release/mura] [--out docs/demo.gif]
+    python3 docs/demo/build.py [--mura .build/release/mura] [--lang en|zh] [--out docs/demo.gif]
 """
 import argparse, html, json, os, shutil, subprocess, tempfile
 from pathlib import Path
 
 W, H = 1200, 750
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-PROMPT = "Tomorrow: release notes first, design review at 2pm, gym in the evening. Put it on my wallpaper."
-PLAN = 'mura plan --date tomorrow --title Tuesday "! Finish the release notes" "2pm design review" "Gym, 45 min"'
+TEXT = {
+    "en": dict(prompt="Tomorrow: release notes first, design review at 2pm, gym in the evening. Put it on my wallpaper.",
+               title="Tuesday", items=["! Finish the release notes", "2pm design review", "Gym, 45 min"], note="Hardest thing first.",
+               ok="ok · 2026-10-27 · switches in after midnight", reply="Done. Tomorrow's list will be on your desktop when you wake up.",
+               finished="Release notes are done.", updated="ok · wallpaper updated",
+               clocks=["Mon 22:41", "Mon 23:59", "Tue 00:00", "Tue 10:12"]),
+    "zh": dict(prompt="明天先写完发布说明，下午两点评审设计，晚上去健身。帮我放到桌面上。",
+               title="周二", items=["! 写完发布说明", "14:00 设计评审", "健身 45 分钟"], note="先做最难的那件事。",
+               ok="ok · 2026-10-27 · 零点后自动换上", reply="好了，明天醒来桌面上就是这张清单。",
+               finished="发布说明写完了。", updated="ok · 壁纸已更新",
+               clocks=["周一 22:41", "周一 23:59", "周二 00:00", "周二 10:12"]),
+}
 
 
 def mura(binary, home, *args):
@@ -20,14 +30,13 @@ def mura(binary, home, *args):
     return data["data"]
 
 
-def walls(binary, work):
+def walls(binary, work, t):
     home = work / "home"
     fonts = Path.home() / "Library/Application Support/Mura/fonts"
     if fonts.exists():
         shutil.copytree(fonts, home / "fonts")
     day = "2026-10-27"
-    mura(binary, home, "plan", "--date", day, "--title", "Tuesday", "! Finish the release notes", "2pm design review",
-         "Gym, 45 min", "--note", "Hardest thing first.")
+    mura(binary, home, "plan", "--date", day, "--title", t["title"], *t["items"], "--note", t["note"])
     first = mura(binary, home, "render", "--date", day, "--size", "2400x1500", "--out", str(work / "a"))["images"][0]["file"]
     mura(binary, home, "done", "1", "--date", day)
     second = mura(binary, home, "render", "--date", day, "--size", "2400x1500", "--out", str(work / "b"))["images"][0]["file"]
@@ -50,35 +59,39 @@ def frame(wall, clock, lines, show_terminal=True, wall_under=None, fade=1.0):
     .bar{{height:28px;background:#2d2d2d;display:flex;align-items:center;padding:0 10px;gap:7px;color:#999;font-size:12px}}
     .bar i{{width:11px;height:11px;border-radius:50%;background:#ff5f57}} .bar i:nth-child(2){{background:#febc2e}} .bar i:nth-child(3){{background:#28c840}}
     .bar span{{margin-left:auto;margin-right:auto;transform:translateX(-30px)}}
-    .body{{padding:14px 16px;font:13.5px/1.55 Menlo,monospace;color:#e6e6e6;min-height:150px}}
+    .body{{padding:14px 16px;font:13.5px/1.55 Menlo,'PingFang SC',monospace;color:#e6e6e6;min-height:150px}}
     .user{{color:#fff}} .user::before{{content:"> ";color:#d97757}} .tool{{color:#8fd18f}} .tool::before{{content:"⏺ ";color:#8fd18f}}
     .out{{color:#9a9a9a;padding-left:18px}} .out::before{{content:"⎿ "}} .say{{color:#e6e6e6}} .say::before{{content:"⏺ ";color:#fff}}
     </style>{under}{bg}<div class="menu"><b></b><span>{clock}</span></div>{term}"""
 
 
-def build(binary, out):
+def build(binary, out, lang):
+    t = TEXT[lang]
+    PROMPT, (c1, c2, c3, c4) = t["prompt"], t["clocks"]
+    PLAN = "mura plan --date tomorrow --title " + t["title"] + " " + " ".join(f'"{i}"' for i in t["items"])
     work = Path(tempfile.mkdtemp(prefix="mura-demo-"))
-    wall1, wall2 = walls(binary, work)
+    wall1, wall2 = walls(binary, work, t)
     frames = []  # (html, seconds)
-    for i in range(0, len(PROMPT) + 1, 6):
-        frames.append((frame(None, "Mon 22:41", [("user", PROMPT[:i])]), 0.06))
+    step = 6 if lang == "en" else 2
+    for i in range(0, len(PROMPT) + 1, step):
+        frames.append((frame(None, c1, [("user", PROMPT[:i])]), 0.06))
     done_prompt = [("user", PROMPT)]
-    frames.append((frame(None, "Mon 22:41", done_prompt + [("tool", PLAN)]), 1.0))
-    frames.append((frame(None, "Mon 22:41", done_prompt + [("tool", PLAN), ("out", "ok · 2026-10-27 · switches in after midnight")]), 1.2))
-    frames.append((frame(None, "Mon 22:41", done_prompt + [("tool", PLAN), ("out", "ok · 2026-10-27 · switches in after midnight"),
-                                                         ("say", "Done. Tomorrow's list will be on your desktop when you wake up.")]), 1.8))
-    frames.append((frame(None, "Mon 23:59", [], show_terminal=False), 0.8))
+    frames.append((frame(None, c1, done_prompt + [("tool", PLAN)]), 1.0))
+    frames.append((frame(None, c1, done_prompt + [("tool", PLAN), ("out", t["ok"])]), 1.2))
+    frames.append((frame(None, c1, done_prompt + [("tool", PLAN), ("out", t["ok"]),
+                                                         ("say", t["reply"])]), 1.8))
+    frames.append((frame(None, c2, [], show_terminal=False), 0.8))
     for k in range(1, 6):
-        frames.append((frame(wall1, "Tue 00:00", [], show_terminal=False, fade=k / 5), 0.08))
-    frames.append((frame(wall1, "Tue 00:00", [], show_terminal=False), 2.4))
-    ticked = "Release notes are done."
-    for i in range(0, len(ticked) + 1, 4):
-        frames.append((frame(wall1, "Tue 10:12", [("user", ticked[:i])]), 0.06))
-    frames.append((frame(wall1, "Tue 10:12", [("user", ticked), ("tool", "mura done 1")]), 0.9))
+        frames.append((frame(wall1, c3, [], show_terminal=False, fade=k / 5), 0.08))
+    frames.append((frame(wall1, c3, [], show_terminal=False), 2.4))
+    ticked = t["finished"]
+    for i in range(0, len(ticked) + 1, 4 if lang == "en" else 1):
+        frames.append((frame(wall1, c4, [("user", ticked[:i])]), 0.06))
+    frames.append((frame(wall1, c4, [("user", ticked), ("tool", "mura done 1")]), 0.9))
     for k in range(1, 5):
-        frames.append((frame(wall2, "Tue 10:12", [("user", ticked), ("tool", "mura done 1"), ("out", "ok · wallpaper updated")],
+        frames.append((frame(wall2, c4, [("user", ticked), ("tool", "mura done 1"), ("out", t["updated"])],
                              wall_under=wall1, fade=k / 4), 0.08))
-    frames.append((frame(wall2, "Tue 10:12", [], show_terminal=False), 3.0))
+    frames.append((frame(wall2, c4, [], show_terminal=False), 3.0))
 
     concat = []
     for n, (page, seconds) in enumerate(frames):
@@ -99,6 +112,8 @@ def build(binary, out):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mura", default=".build/release/mura")
-    parser.add_argument("--out", default="docs/demo.gif")
+    parser.add_argument("--lang", choices=sorted(TEXT), default="en")
+    parser.add_argument("--out")
     args = parser.parse_args()
-    build(os.path.abspath(args.mura), Path(args.out))
+    out = Path(args.out or ("docs/demo.gif" if args.lang == "en" else f"docs/demo-{args.lang}.gif"))
+    build(os.path.abspath(args.mura), out, args.lang)

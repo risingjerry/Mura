@@ -1,11 +1,22 @@
 #!/bin/sh
-# Builds mura from this checkout, installs it to ~/.local/bin, downloads the fonts and installs the midnight switch.
-# Usage: script/install.sh [--no-schedule]
+# Installs mura to ~/.local/bin, downloads the handwriting fonts and installs the midnight switch.
+#   From a clone:  script/install.sh [--no-schedule]          (builds from source; needs Xcode command line tools)
+#   One line:      curl -fsSL https://raw.githubusercontent.com/risingjerry/Mura/main/script/install.sh | sh
+#                  (downloads the prebuilt universal binary from the latest release)
 set -eu
-cd "$(dirname "$0")/.."
-command -v swift >/dev/null || { echo "Swift toolchain missing: run 'xcode-select --install' first" >&2; exit 1; }
-swift build -c release --product mura
-mkdir -p "$HOME/.local/bin"
-install -m 755 .build/release/mura "$HOME/.local/bin/mura"
-"$HOME/.local/bin/mura" setup "$@"
-case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "Add ~/.local/bin to your PATH to call 'mura' directly." >&2 ;; esac
+BIN="$HOME/.local/bin"
+mkdir -p "$BIN"
+here=$(cd "$(dirname "$0")" 2>/dev/null && pwd || true)
+if [ -n "$here" ] && [ -f "$here/../Package.swift" ]; then
+  command -v swift >/dev/null || { echo "Swift toolchain missing: run 'xcode-select --install' first" >&2; exit 1; }
+  (cd "$here/.." && swift build -c release --product mura)
+  install -m 755 "$here/../.build/release/mura" "$BIN/mura"
+else
+  tmp=$(mktemp -d)
+  trap 'rm -rf "$tmp"' EXIT
+  curl -fsSL -o "$tmp/mura.tar.gz" https://github.com/risingjerry/Mura/releases/latest/download/mura-macos-universal.tar.gz
+  tar -xzf "$tmp/mura.tar.gz" -C "$tmp"
+  install -m 755 "$tmp/mura" "$BIN/mura"
+fi
+"$BIN/mura" setup "$@"
+case ":$PATH:" in *":$BIN:"*) ;; *) echo "Add ~/.local/bin to your PATH to call 'mura' directly." >&2 ;; esac

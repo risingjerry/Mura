@@ -15,7 +15,7 @@ Every command prints one JSON object: `{"ok": true, "command": ..., "data": {...
 mura doctor     # fonts installed? schedule loaded? timezone? what is on screen?
 ```
 
-- Command missing: `git clone https://github.com/risingjerry/Mura && cd Mura && script/install.sh` (needs Xcode command line tools; installs to `~/.local/bin/mura`, downloads the fonts, installs the midnight switch).
+- Command missing: `curl -fsSL https://raw.githubusercontent.com/risingjerry/Mura/main/script/install.sh | sh` (prebuilt universal binary to `~/.local/bin/mura`, downloads the fonts, installs the midnight switch; add `-s -- --no-schedule` to skip the switch). From a clone, `script/install.sh` builds from source instead.
 - `schedule.loaded` false → `mura setup` (or tell the user that other days will not switch in by themselves).
 - If the user lives in another timezone than the Mac's clock, set it once: `mura config set timezone Asia/Shanghai`. "today" and the midnight switch follow it.
 

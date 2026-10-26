@@ -14,7 +14,7 @@
 
 ## Why
 
-To-do apps wait for you to open them. The wallpaper is already in front of you. Mura v1 was a canvas you wrote on by hand; v2 is built for agents: no editor, no coordinates, no app running in the background. The agent sends text, Mura does the layout and the drawing.
+To-do apps wait for you to open them. The wallpaper is already in front of you. Mura is built for agents: no editor, no coordinates, no app running in the background. The agent sends text, Mura does the layout and the drawing.
 
 ## Install
 
@@ -100,9 +100,6 @@ No. Everything stays in `~/Library/Application Support/Mura`. The only network a
 
 ### Does it keep running in the background?
 No. A LaunchAgent starts `mura tick` every five minutes; it exits in milliseconds unless the day changed.
-
-### Where is the v1 drawing canvas?
-v1 (a menu bar app with a hand-drawing editor) lives on the [`v1` branch](https://github.com/risingjerry/Mura/tree/v1) and in the [v1 release](https://github.com/risingjerry/Mura/releases/tag/v1). v2 drops the editor on purpose.
 
 ## Uninstall
 

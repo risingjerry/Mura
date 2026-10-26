@@ -1,6 +1,6 @@
 # Agent guide — Mura
 
-Mura v2 is a single Swift command-line tool, `mura`, that renders a day's to-do list into an Excalidraw-style hand-drawn PNG and sets it as the macOS wallpaper on every display. To *use* Mura from an agent, read `skills/mura/SKILL.md`; this file is for working on the repo.
+Mura is a single Swift command-line tool, `mura`, that renders a day's to-do list into an Excalidraw-style hand-drawn PNG and sets it as the macOS wallpaper on every display. To *use* Mura from an agent, read `skills/mura/SKILL.md`; this file is for working on the repo.
 
 ## Product intent
 

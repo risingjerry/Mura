@@ -2,126 +2,83 @@
   <img src="docs/images/mura-logo.png" width="112" height="112" alt="Mura logo">
 </p>
 
-# Mura — turn a finite canvas into your Mac desktop wallpaper
+# Mura — your AI agent writes tomorrow's plan onto your Mac wallpaper
 
 <p align="center">
-  <strong>English</strong> · <a href="README.zh-CN.md">中文</a> · <a href="https://github.com/risingjerry/Mura/releases/latest"><strong>Download</strong></a> · <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
+  <strong>English</strong> · <a href="README.zh-CN.md">中文</a> · <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
 </p>
 
-**Mura is a small macOS menu bar app: write and doodle on a blank canvas, press one button, and it becomes your desktop wallpaper, so the things you must remember are the first thing you see.**
+**Mura is a 600 KB command-line tool for macOS. Your agent (Claude Code, Codex, …) tells it what you will do tomorrow; at midnight your desktop turns into that list, drawn in Excalidraw's hand-drawn style. You wake up, glance at the screen, and know your day.**
 
-![Demo: write a note on the Mura canvas, click Save to desktop and it becomes the macOS wallpaper; an agent then adds a reminder with dmwctl and applies it with --confirm](docs/demo.gif)
+![A Mura wallpaper: a hand-drawn to-do list with a red underlined title, a highlighted important item, a ticked item and a blue note box](docs/images/mura-hero.png)
 
-## What is Mura?
+## Why
 
-> Open a finite canvas, write or draw on it, and save it as your wallpaper.
-
-Good for what you should see every time you open your laptop:
-
-- the few most important things today
-- one line to remind yourself
-- a quick arrow, circle or line
-- different notes on different screens
-
-Mura is not a task manager. It does one thing: **it makes your desktop itself a reminder canvas.**
-
-![Mura editor screenshot](docs/images/mura-editor.png)
-
-![Mura color palette screenshot](docs/images/mura-colors.png)
+To-do apps wait for you to open them. The wallpaper is already in front of you. Mura v1 was a canvas you wrote on by hand; v2 is built for agents: no editor, no coordinates, no app running in the background. The agent sends text, Mura does the layout and the drawing.
 
 ## Install
 
-One line in Terminal. It downloads the release, installs `Mura.app` into `/Applications`, removes the quarantine flag of the unsigned build, and opens Mura:
+Needs macOS 14+ and the Xcode command line tools (`xcode-select --install`).
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/risingjerry/Mura/main/script/install_release.sh | bash
+git clone https://github.com/risingjerry/Mura && cd Mura && script/install.sh
 ```
 
-Terminal asks for your login password if macOS needs permission.
-
-Or install by hand: download `Mura-v1.dmg` from [Releases](https://github.com/risingjerry/Mura/releases/latest), open it, drag `Mura.app` to `/Applications`, and start it.
-
-## Highlights
-
-- **Finite canvas** — a clean whiteboard with text, pen, eraser, undo/redo and colors.
-- **Save to desktop** — rendered as a plain PNG wallpaper. After saving there is no editor window and no live web wallpaper running.
-- **Per-screen editing** on multiple displays.
-- **Local first** — your canvas stays on your Mac; no account.
-- **Agent friendly** — a `dmwctl` command-line tool with JSON output lets Claude Code or Codex write reminders onto your wallpaper.
-
-## How it works
-
-Mura is a native SwiftPM macOS menu bar app. Editing opens a bundled local canvas editor in a web view. Saving stores the board JSON and a PNG in the local workspace and applies the PNG as wallpaper; then the editor is released and macOS just shows an image. `dmwctl` reads and writes the same board files. Details: [docs/architecture/overview.md](docs/architecture/overview.md).
+This builds `mura` into `~/.local/bin`, downloads the two handwriting fonts (Virgil and Xiaolai, about 22 MB) and installs a LaunchAgent that switches the wallpaper after midnight. Nothing stays running.
 
 ## Use with Claude Code / Codex
 
 ```bash
-npx skills add risingjerry/Mura
+npx skills add risingjerry/Mura      # or copy skills/mura into ~/.claude/skills/
 ```
 
-Or copy `skills/mura` to `~/.claude/skills/` or `~/.agents/skills/`. Then say, for example:
+Then talk normally: *"Tomorrow: finish the release notes first, design review at 2, gym in the evening — put it on my wallpaper."* When you finish something: *"Done with the design review."*
 
-- `Put my three most important tasks for today on my desktop wallpaper.`
-- `Underline "Report due Friday" in red on the wallpaper.`
-- `Restore my previous wallpaper.`
+## Use it yourself
 
-The skill makes the agent render a preview first and only change the wallpaper with `--confirm` after you agree. `dmwctl` is not inside the DMG: build it from the repo with `swift build -c release --product dmwctl` (macOS 14+, Swift toolchain). See [AGENTS.md](AGENTS.md) and [skills/mura/SKILL.md](skills/mura/SKILL.md).
+```bash
+mura plan --date tomorrow "! Ship the release notes" "2pm design review" "Gym, 45 min"
+mura add "Call the bank"          # today: the wallpaper updates right away
+mura done 2                       # tick it off
+mura render --date tomorrow       # preview PNGs, wallpaper untouched
+mura undo                         # previous wallpaper back
+mura help                         # every command, as JSON
+```
 
-## Limits and requirements
+A day is a Markdown file in `~/Library/Application Support/Mura/days/`: `# title`, `- [ ] item`, `- [x] done`, a leading `!` marks an item important, `> note` adds a sticky note.
 
-- macOS 14 or newer.
-- The v1 build is ad-hoc signed and **not notarized by Apple** (see the FAQ below).
-- Mura is a reminder canvas, not task management.
-- The command-line tool has to be built with Swift.
+## What it draws
+
+- Your handwriting-style title with a red hand-drawn underline, the date above it.
+- A sketchy checkbox per item; important items get a yellow highlighter, finished ones a green tick and a strike-through, and "All done!" is circled once everything is ticked.
+- Font size, wrapping and a second column are chosen to fit each display; overflow becomes "…and N more".
+- One render per display at native resolution, on every desktop Space.
+
+## How it works
+
+Swift + CoreText + CoreGraphics. The sketchy shapes come from [rough.js](https://github.com/rough-stuff/rough) (the library behind Excalidraw) running in the system's JavaScriptCore, with no browser or web view. Rendering two 4K displays takes well under a second; `mura tick` takes milliseconds when nothing changed. macOS only changes the wallpaper of the current Space through its public API, so Mura also updates the other Spaces in the system wallpaper store. It backs the store up first, checks the result, and rolls back if macOS rejects it. Turn this off with `mura config set spaces current`.
 
 ## FAQ
 
-### How do I put my to-do list on my Mac desktop wallpaper?
-Install Mura, open the edit canvas, write your items with the text tool, and click Save to desktop. Or ask an agent to do it through `dmwctl`.
+**My Mac's clock is in a different timezone from the one I live by.** Run `mura config set timezone Asia/Shanghai` (any IANA name). "today" and the midnight switch follow it.
 
-### macOS says Mura can't be opened, the developer can't be verified, or the app is damaged. What do I do?
-v1 is not notarized, so macOS may show warnings such as "cannot be opened because the developer cannot be verified" or "Mura-v1.dmg is damaged". First try right-click → **Open**. If that is not enough, remove the quarantine flag. **Only do this for files you downloaded from the official Releases page.**
+**Does anything upload my list?** No. Everything stays in `~/Library/Application Support/Mura`. The only network access is the one-time font download in `mura setup`.
 
-If the DMG itself will not open:
+**How do I get my old wallpaper back?** `mura undo` (repeat to go further back), or pick one in System Settings → Wallpaper.
 
-```bash
-sudo xattr -rd com.apple.quarantine ~/Downloads/Mura-v1.dmg
-open ~/Downloads/Mura-v1.dmg
-```
-
-Drag `Mura.app` into `/Applications`. If the app still will not open:
-
-```bash
-sudo xattr -rd com.apple.quarantine /Applications/Mura.app
-open /Applications/Mura.app
-```
-
-(If `/Applications/Mura.app` does not exist yet, the second command fails with "No such file".)
-
-### Does Mura upload my notes?
-No. The canvas is stored in `~/Library/Application Support/DesktopMemoryWall`, and there is no account.
-
-### Does it keep using resources after I save?
-No. After save or cancel the editor web view is released; the desktop shows an ordinary PNG.
-
-### Can an AI agent write my wallpaper?
-Yes, see "Use with Claude Code / Codex". The agent previews by default and needs your go-ahead (`--confirm`) to change the wallpaper.
-
-### How do I get my old wallpaper back?
-Mura records the previous wallpaper before applying a new one. Ask your agent to run `dmwctl wallpaper restore --confirm`, or just pick it again in **System Settings → Wallpaper**.
+**Where is the v1 drawing canvas?** v1 (menu bar app with a hand-drawing editor) stays on the `main` branch and in Releases. v2 drops the editor on purpose.
 
 ## Uninstall
 
-1. Quit Mura and drag `/Applications/Mura.app` to the Trash.
-2. First choose the wallpaper you want in **System Settings → Wallpaper** (or run `dmwctl wallpaper restore --confirm`).
-3. Optional: delete local data with `rm -rf ~/Library/Application\ Support/DesktopMemoryWall`.
+```bash
+mura schedule uninstall && mura undo   # stop the switch, restore your wallpaper
+rm ~/.local/bin/mura && rm -rf ~/Library/Application\ Support/Mura
+```
 
-## Credits and license
+## License
 
-Mura is open source under the [MIT License](LICENSE). The bundled font is [LXGW WenKai](https://github.com/lxgw/LxgwWenKai), licensed under the SIL Open Font License 1.1; the full text is in [THIRD_PARTY_FONT_LICENSE-LXGWWenKai.txt](THIRD_PARTY_FONT_LICENSE-LXGWWenKai.txt).
+MIT. rough.js is MIT; Virgil and Xiaolai are SIL OFL 1.1 and are downloaded, not bundled. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ---
 
-If Mura keeps your desktop useful, a star helps others find it.
-
-
+If Mura keeps your mornings clear, a star helps others find it.

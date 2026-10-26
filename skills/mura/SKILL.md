@@ -1,70 +1,60 @@
 ---
 name: mura
-description: Write reminders, notes or simple drawings onto the user's macOS desktop wallpaper with Mura's `dmwctl` command-line tool. Use when the user wants something to show on their desktop background ("put today's top 3 tasks on my wallpaper", "remind me on my desktop", "把提醒写到桌面壁纸上", "更新桌面看板") or wants to restore the previous wallpaper. macOS only.
+description: Put the user's to-do list for a day onto their macOS desktop wallpaper, drawn in an Excalidraw-style hand-drawn look, with the `mura` CLI. Use when the user (or a plan you made with them) settles what they will do today or tomorrow and it should be the first thing they see ("put tomorrow's plan on my wallpaper", "把明天要做的写到桌面上", "我做完了第二件", "更新桌面待办"), when they finish or drop an item, or when they want the previous wallpaper back. macOS only.
 ---
 
-# Mura — reminders on the wallpaper
+# Mura — the day's list on the wallpaper
 
-Mura keeps one finite canvas ("board") per workspace and renders it into a normal PNG wallpaper. `dmwctl` edits that board from the terminal. Every command prints one JSON object `{"ok": bool, "message": string, "data": {...}}` and exits 0 on success, 1 on failure. Always pass `--json` (accepted for clarity; output is JSON either way).
+Each day is a small Markdown file. Editing **today** redraws the wallpaper at once; any other day switches in by itself after midnight (a LaunchAgent runs `mura tick` every 5 minutes). Mura lays everything out; you never pass coordinates.
+
+Every command prints one JSON object: `{"ok": true, "command": ..., "data": {...}, "warnings": [...]?}` or `{"ok": false, "error": {"code", "message"}}`. Exit 0 ok, 1 failure, 2 usage. `mura help` lists every command.
 
 ## First contact
 
 ```sh
-dmwctl status --json        # if the command is missing, see below
-dmwctl diagnostics --json   # data.editor.ready should be true
+mura doctor     # fonts installed? schedule loaded? timezone? what is on screen?
 ```
 
-`dmwctl` is not shipped inside the `.dmg`. If it is missing, build it from the repo: `git clone https://github.com/risingjerry/Mura && cd Mura && swift build -c release --product dmwctl`, then run `.build/release/dmwctl`. Use `swift run dmwctl ...` inside the clone as an alternative. Requires macOS 14+ and the Swift toolchain.
+- Command missing: `git clone https://github.com/risingjerry/Mura && cd Mura && script/install.sh` (needs Xcode command line tools; installs to `~/.local/bin/mura`, downloads the fonts, installs the midnight switch).
+- `schedule.loaded` false → `mura setup` (or tell the user that other days will not switch in by themselves).
+- If the user lives in another timezone than the Mac's clock, set it once: `mura config set timezone Asia/Shanghai`. "today" and the midnight switch follow it.
 
-Use `--workspace /tmp/mura-test` while experimenting so the user's real board is untouched. The default workspace is `~/Library/Application Support/DesktopMemoryWall`.
-
-## Safety rules
-
-- Reading and rendering a preview are safe. `board blank`, `board write` take a snapshot of the previous board first.
-- `wallpaper apply --confirm` and `wallpaper restore --confirm` change what the user sees on screen. Render a preview first, show the user the file path, and add `--confirm` only after they agree (or they asked for the change explicitly).
-- Without `--confirm` those two commands fail with a confirmation error; never work around that.
-- Do not invent reminder content. Put on the wall only what the user told you.
-
-## Recipe: put reminders on the wallpaper
+## Recipes
 
 ```sh
-dmwctl displays list --json                       # find the main display size
-dmwctl board blank --json                         # fresh canvas at main display size (snapshots the old one)
-dmwctl board patch --text "Ship the report" --x 160 --y 160 --width 1200 --height 160 --font-size 96 --json
-dmwctl board patch --text "Call the dentist" --x 160 --y 360 --font-size 96 --json
-dmwctl board stroke --points "160,330;900,330" --color "#c0392b" --width 8 --json   # an underline
-dmwctl render preview --json                      # data.file is a PNG to look at
-dmwctl render preview --wallpaper --json          # writes the wallpaper render
-dmwctl wallpaper apply --confirm --json           # only after the user agrees
+# Plan tomorrow (replaces that day). Markdown: '# title', '- [ ] item', '! ' = important, '- [x]' = done, '> note'
+mura plan --date tomorrow --stdin <<'EOF'
+# Tuesday
+- [ ] ! Ship the release notes
+- [ ] 2pm design review
+- [ ] Gym, 45 min
+> Do the hardest thing first.
+EOF
+
+mura add "Call the bank" --important          # append to today (wallpaper updates now)
+mura show                                       # numbered items
+mura done 2                                     # tick item 2 (also: undone N, rm N)
+mura render --date tomorrow                     # PNG previews without touching the wallpaper; look at data.images[].file
+mura undo                                       # put back the wallpaper from before the last change
 ```
 
-Add to what is already there instead of blanking: skip `board blank`, run `dmwctl board read --json` first to see existing elements and their coordinates (`data.elements`), then `board patch` below them.
+Dates: `today` (default), `tomorrow`, `yesterday`, `+N`, `-N`, `YYYY-MM-DD`.
 
-## Commands
+## Rules
 
-| Command | Effect |
-|---|---|
-| `status` | active board summary, main display, whether a render exists |
-| `diagnostics` | board, display count, editor and font readiness, last audit events |
-| `displays list` | display profiles (id, size, scale) |
-| `board read` | full active board JSON |
-| `board blank [--width N --height N]` | new empty board (snapshot first) |
-| `board patch --text T [--x --y --width --height --font-size --color]` | add a text element (`board text` is an alias) |
-| `board stroke --points "x,y;x,y;..." [--color --width]` | add a freehand line, at least two points |
-| `board write --file board.json` | replace the board from a JSON file (snapshot first) |
-| `render preview [--width N --height N] [--wallpaper]` | render PNG; `--wallpaper` writes the wallpaper file |
-| `wallpaper apply --confirm` | apply the latest wallpaper render, remembering the previous one |
-| `wallpaper restore --confirm` | put the previous wallpaper back |
-| `audit tail` | last audit events |
-
-## Style
-
-Start blank. Use very large text (80-120 for a 1920x1080 canvas; if it is not readable from normal desktop distance it is too small). Short, concrete lines, a few per screen. Warm paper background, dark ink, sparse red/blue accents. Do not turn the wall into a task database.
+- Write only what the user decided. Do not invent tasks, motivational notes or titles they did not ask for. Keep items short (one line each, about 5–40 characters); the layout shrinks text and finally hides overflow as "…and N more".
+- Use `!` for at most one or two truly important items.
+- To change one item, use `done`/`undone`/`rm`/`add`; use `plan` only to replace the whole day. Read with `mura show` before editing a day someone else may have written.
+- Editing today changes the visible desktop immediately and is reversible with `mura undo`. If the user only wants to prepare, use `--no-apply` or plan a future date.
+- Read `warnings` in every response and relay them (e.g. fonts missing, schedule not installed, only the current Space updated).
+- Never edit files under `~/Library/Application Support/Mura` by hand while also running commands; use the CLI.
 
 ## Errors
 
-- `ok: false` with "Missing argument: ..." — a required flag is missing; read the message.
-- confirmation required — you forgot `--confirm`; ask the user first.
-- `diagnostics` shows `editor.ready` false — the editor/font assets are missing from this build; rebuild from the repo.
-
-More: `docs/architecture/tool-parity.md` in the repo maps every UI action to its command.
+| `error.code` | Meaning | Do |
+|---|---|---|
+| `usage` | bad flag, date or item number | fix the call; `mura show` for numbers |
+| `not_found` | nothing to undo, no display | report |
+| `network` / `checksum` | font download failed in `mura setup` | retry later; rendering falls back to system fonts |
+| `wallpaper` | macOS refused the image | report with the message |
+| `spaces` (warning) | only the current desktop Space got the wallpaper | report; `mura config set spaces current` makes this the normal mode |
